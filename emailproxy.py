@@ -2497,6 +2497,24 @@ class App:
                         self.authorisation_requests.append(data)
                         icon.update_menu()  # force refresh the menu
                         self.notify(APP_NAME, 'Please authorise your account %s from the menu' % data['username'])
+                    elif self.args.external_auth:
+                        if not sys.stdin.isatty():
+                            Log.error('Not running interactively; ignoring authorsation request!')
+                        else:
+                            Log.info('Please visit the following URL to authenticate account %s: %s' %
+                                     (data['username'], data['permission_url']))
+                            response_url = input('Please paste the full resulting redirection URL: ')
+                            RESPONSE_QUEUE.put(
+                                {'permission_url': data['permission_url'],
+                                 'response_url': response_url,
+                                 'username': data['username']})
+                            #for request in self.authorisation_requests[:]:  # iterate over a copy; remove from original
+                            #    if request['permission_url'] == data['permission_url']:
+                            #        self.authorisation_requests.remove(request)
+                            #        break  # we could have multiple simultaneous requests, some not yet expired
+                    else:
+                        Log.error('--no-gui specified, but not --local-server-auth or --external-auth; ' +
+                                  'ignoring authorisation request!')
                 else:
                     for request in self.authorisation_requests[:]:  # iterate over a copy; remove from original
                         if request['permission_url'] == data['permission_url']:
